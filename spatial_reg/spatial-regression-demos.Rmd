@@ -3,7 +3,7 @@ title: "Spatial regression demos"
 author: "Chris Hess"
 date: "5/4/2021"
 output:
-  html_document:
+  github_document:
     df_print: paged
 ---
 
