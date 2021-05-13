@@ -3,6 +3,28 @@ Spatial regression demos
 Chris Hess
 5/4/2021
 
+  - [Overview](#overview)
+  - [Boston housing data](#boston-housing-data)
+      - [Spatial extent](#spatial-extent)
+  - [Getting things ready](#getting-things-ready)
+      - [Polygon -\> Neighborhood list](#polygon---neighborhood-list)
+      - [Removing empty neighbor sets](#removing-empty-neighbor-sets)
+      - [Visualizing the neighborhood
+        structure](#visualizing-the-neighborhood-structure)
+      - [Neighborhood list -\> spatial weights
+        matrix](#neighborhood-list---spatial-weights-matrix)
+  - [Estimating spatial models](#estimating-spatial-models)
+      - [Linear regression baseline](#linear-regression-baseline)
+      - [Residual spatial
+        autocorrelation](#residual-spatial-autocorrelation)
+      - [Spatial models](#spatial-models)
+      - [Some takeaways about spatial econometric
+        models](#some-takeaways-about-spatial-econometric-models)
+      - [A special issue of interest:](#a-special-issue-of-interest)
+      - [Semiparametric spatial models](#semiparametric-spatial-models)
+      - [Conditional autoregressive (CAR) spatial
+        models](#conditional-autoregressive-car-spatial-models)
+
 ``` r
 #dependencies
 library(tidyverse)
@@ -10,6 +32,7 @@ library(sf)
 library(spatialreg)
 library(spdep)
 library(INLA)
+library(mgcv)
 
 #load the Boston housing Ddata
 boston <- read_sf(system.file("shapes/boston_tracts.shp", package = "spData")) %>%
@@ -534,6 +557,12 @@ models. That is, the error term is decomposed into a spatially
 structured component based on neighbors, and a non-structured component
 that captures the rest.
 
+For this to alleviate the residual spatial autocorrelation, the user
+must (importantly) provide the correct neighborhood structure through
+the weights matrix. One could certainly keep testing the residuals for
+spatial structure after trying different neighborhood structures, but
+this is not very appealing from a methodological standpoint.
+
 ``` r
 #estimate spatial error model
 spatial_error_model <- errorsarlm(log(CMEDV) ~ I(NOX^2) + CRIM + ZN + INDUS + CHAS + I(RM^2) +
@@ -833,11 +862,246 @@ ggplot(impacts, aes(y = term, x = value, fill = name)) +
 
 ![](spatial-regression-demos_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
-We can then visualize
+<br>
+
+### Some takeaways about spatial econometric models
+
+1.  Spatial models do allow one to explictly model phenomena like
+    spillover effects across a set of areas.
+
+2.  They also potentially provide a solution for spatially structured
+    model errors, but this rests on assumption that the chosen
+    neighborhood matrix is the right one, and not some other definition
+    of neighboring (e.g., first and second order neighbors).
+
+3.  They add considerable complexity in terms of both model estimation
+    and interpretation.
 
 <br>
 
-#### Conditional autoregressive (CAR) spatial models
+### A special issue of interest:
+
+In 2012, *Regional Science* published a set of articles all centered
+around taking stock of spatial econometric models’ development and
+research applications. The introduction to this issue, along with the
+three substantive articles are all in this repo and are highly
+informative if these models are on your radar.
+
+  - [Partridge et al 2012, *Special issue
+    introduction*](./literature/partridge-et-al-2012-regional-science.pdf)
+      - This is useful for context about limitations to these models,
+        both in terms of sensitivity to specification and causal
+        identification.
+    
+      - > We commissioned three peer-reviewed papers to assess how
+        > spatial econometrics should be used. In sum, their
+        > prescriptions range from sweeping changes to a proposal for
+        > more nuanced changes of standard practice.
+    
+      - > The most sweeping is articulated in the paper by Gibbons and
+        > Overman (2012). They contend that identification is almost
+        > always impossible with standard spatial econometric practice
+    
+      - > The second paper is McMillen (2012). Like Gibbons and Overman
+        > (2012), McMillen’s starting point is that standard spatial
+        > econometrics rests on very restrictive assumptions and that
+        > identification is very difficult. Specifically regarding
+        > spatial lag and spatial error models, McMillen states “Though
+        > they play a useful role in detecting various forms of model
+        > misspecification, they are apt to be viewed as the correct
+        > parametric form for a model when, in fact, they are simply a
+        > convenient way to control for unknown sources of spatial
+        > clustering among model residuals or the dependent variable.”
+    
+      - > The final paper is by Corrado and Fingleton (2012). They agree
+        > with the two other papers that standard spatial econometrics
+        > has too often been misapplied. Namely, there is not enough
+        > emphasis on both theory or in simply forming a conceptual
+        > framework to understand spatial spillovers. Thus, empirical
+        > models are misspecified, making accurate inference
+        > challenging.
+  - [Gibbons and Overman 2012, *“Mostly pointless spatial
+    econometrics”*](./literature/gibbons-and-overman-2012-regional-science.pdf)
+      - > Many spatial econometricians are surely aware of these
+        > problems but the literature (inadvertently) downplays their
+        > importance because of the focus on deriving estimators
+        > assuming that functional forms are known and by using model
+        > comparison techniques to choose between competing
+        > specifications.
+    
+      - > While this raises interesting theoretical and computation
+        > issues that have been the subject of a growing and thoughtful
+        > formal econometric literature, it does not provide a toolbox
+        > that gives satisfactory solutions to these problems for
+        > applied researchers interested in causality and the economic
+        > processes at work.
+    
+      - > It is in this sense that we call into question the approach of
+        > the burgeoning body of applied economic research that proceeds
+        > with mechanical application of spatial econometric techniques
+        > to causal questions of “spillovers” and other forms of spatial
+        > interaction, or that estimates spatial lag models as a quick
+        > fix for endogeneity issues, or that blindly applies spatial
+        > econometric models by default without serious consideration of
+        > whether this is necessary given the research question in hand.
+  - [McMillen 2012, *“Perspectives on Spatial
+    Econometrics”*](./literature/mcmillen-2012-regional-science.pdf)
+      - > Standard spatial econometric models have become over-used.
+    
+      - > Though they play a useful role in detecting various forms of
+        > model misspecification, they are apt to be viewed as the
+        > correct parametric form for a model when, in fact, they are
+        > simply a convenient way to control for unknown sources of
+        > spatial clustering among model residuals or the dependent
+        > variable.
+    
+      - > Using a spatial weight matrix to form weighted averages of a
+        > variable is nothing more than a form of linear smoothing with
+        > (typically) an unusually narrow bandwidth.
+    
+      - > Though clever procedures have been proposed for manipulating
+        > or simply avoiding working with the large matrices required by
+        > standard spatial models, researchers seldom truly believe in
+        > the model structure that made them necessary in the first
+        > place.
+    
+      - > If the true model structure is unknown and the primary
+        > objective is not to estimate a causal effect of Wy on y, there
+        > is no compelling reason for choosing spatial AR or error
+        > models over other forms of spatial smoothing; indeed, the
+        > choice is likely to cause as much harm as good.
+  - [Corrado and Fingleton 2012, *“Where is the Economics in Spatial
+    Economics?”*](./literature/corrado-and-fingleton-2012-regional-science.pdf)
+      - > We have called for a stronger more theoretical basis for W to
+        > supplement the very significant atheoretical empirical
+        > foundations that dominate, something that might emerge from
+        > current work on games, network formation, dynamics and
+        > equilibria that is occurring within the social science,
+        > notably within the economics of networks.
+    
+      - > We have attempted to show that the concept of the W matrix is
+        > however undeniably necessary in one form or another and is in
+        > any case almost inescapable.
+    
+      - > It first comes to our attention as a convenient, useful, and
+        > succinct representation of spatial interaction, either in the
+        > form of endogenous or exogenous lagged variables, and/or as
+        > part of an explicit error process.
+
+Finally, there is a related paper by one of the special issues authors
+called [“Issues in Spatial Data
+anlysis”](./literature/mcmillen-2010-regional-science.pdf) that
+discusses shortcomings between how spatial models which may be
+informative.
+
+<br>
+
+### Semiparametric spatial models
+
+The semiparametric approach that McMillen 2012 discusses can be
+implemented within R as a generalized additive model (GAM) estimated
+with `mgcv`.
+
+A few different books on GAMs also mention this approach to spatial
+models - see
+[here](https://reseau-mexico.fr/sites/reseau-mexico.fr/files/igam.pdf)
+for Simon Wood’s book *Introduction to Generalized Additive Models*,
+[here](https://m-clark.github.io/generalized-additive-models/appendix.html#time-and-space)
+for the relevant appendix in Michael Clark’s *Generalized Additive
+Models*.
+
+``` r
+#model the data with semiparametric smooth for lng X lat
+semipar_model <- gam(log(CMEDV) ~ I(NOX^2) + CRIM + ZN + INDUS + CHAS + 
+                       I(RM^2) +AGE + log(DIS) + log(RAD) + TAX + 
+                       PTRATIO + B + log(LSTAT) +
+                       s(LON, LAT, k = 100),
+                     data = boston)
+
+#look at model summary
+summary(semipar_model)
+```
+
+    ## 
+    ## Family: gaussian 
+    ## Link function: identity 
+    ## 
+    ## Formula:
+    ## log(CMEDV) ~ I(NOX^2) + CRIM + ZN + INDUS + CHAS + I(RM^2) + 
+    ##     AGE + log(DIS) + log(RAD) + TAX + PTRATIO + B + log(LSTAT) + 
+    ##     s(LON, LAT, k = 100)
+    ## 
+    ## Parametric coefficients:
+    ##               Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  4.5598952  0.2225039  20.494  < 2e-16 ***
+    ## I(NOX^2)    -0.6579673  0.1392007  -4.727 3.13e-06 ***
+    ## CRIM        -0.0096134  0.0010771  -8.925  < 2e-16 ***
+    ## ZN           0.0001611  0.0007381   0.218 0.827361    
+    ## INDUS        0.0022635  0.0029409   0.770 0.441930    
+    ## CHAS1        0.0012306  0.0330738   0.037 0.970337    
+    ## I(RM^2)      0.0058742  0.0012179   4.823 1.98e-06 ***
+    ## AGE         -0.0003260  0.0006007  -0.543 0.587689    
+    ## log(DIS)    -0.4881852  0.1336659  -3.652 0.000293 ***
+    ## log(RAD)     0.0923723  0.0272811   3.386 0.000777 ***
+    ## TAX         -0.0005071  0.0001466  -3.459 0.000599 ***
+    ## PTRATIO     -0.0166678  0.0062668  -2.660 0.008123 ** 
+    ## B            0.0006019  0.0001148   5.243 2.52e-07 ***
+    ## log(LSTAT)  -0.3423120  0.0249354 -13.728  < 2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Approximate significance of smooth terms:
+    ##              edf Ref.df     F p-value    
+    ## s(LON,LAT) 75.59  90.18 3.431  <2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## R-sq.(adj) =  0.878   Deviance explained =   90%
+    ## GCV = 0.024637  Scale est. = 0.020275  n = 506
+
+``` r
+#generate predictions
+boston$gam_pred <- predict(semipar_model)
+
+#RMSE
+sqrt(mean((log(boston$CMEDV) - boston$lm_pred)^2))
+```
+
+    ## [1] 0.177431
+
+``` r
+sqrt(mean((log(boston$CMEDV) - boston$sdm_pred)^2))
+```
+
+    ## [1] 0.1308652
+
+``` r
+sqrt(mean((log(boston$CMEDV) - boston$gam_pred)^2))
+```
+
+    ## [1] 0.1291713
+
+``` r
+#grab the predictions for mapping
+model_compare <- boston %>%
+  mutate(sdm_pred = as.numeric(sdm_pred)) %>%
+  select(lm_pred, sdm_pred, gam_pred, geometry) %>%
+  pivot_longer(-geometry, names_to = "model", values_to = "prediction") %>%
+  mutate(prediction = exp(prediction)) %>%
+  st_as_sf()
+
+#make map
+ggplot(model_compare, aes(fill = prediction)) +
+  facet_grid(~ model) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c() +
+  theme_void()
+```
+
+![](spatial-regression-demos_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+<br>
+
+### Conditional autoregressive (CAR) spatial models
 
 Conditional autoregressive (CAR) models are more common in epidemiology
 and biostatistics for prediction tasks like disease mapping. According
@@ -908,7 +1172,7 @@ summary(spatial_icar_model)
     ##    control.compute = list(dic = TRUE, waic = TRUE, ", " cpo = TRUE), 
     ##    control.predictor = list(compute = TRUE))") 
     ## Time used:
-    ##     Pre = 4.22, Running = 5.2, Post = 0.275, Total = 9.7 
+    ##     Pre = 4.02, Running = 0.847, Post = 0.237, Total = 5.1 
     ## Fixed effects:
     ##              mean    sd 0.025quant 0.5quant 0.975quant  mode kld
     ## (Intercept) 3.149 0.035       3.08    3.149      3.219 3.149   0
@@ -959,4 +1223,6 @@ ggplot(boston_icar_plot, aes(fill = value)) +
   geom_sf(color = NA)
 ```
 
-![](spatial-regression-demos_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](spatial-regression-demos_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+<br>
