@@ -30,7 +30,7 @@ boston <- read_sf(system.file("shapes/boston_tracts.shp", package = "spData")) %
 
 ## Overview
 
-This vignette is focused on demonstrating code for setting up and estimating spatial regression models in R. The models are focused on the effect of air quality on home values, with the precise specifications drawn from [Harris & Rubenfield 1978](./literature/harris-and-rubenfield-1978-environmental-economics.pdf)'s original use of the Boston data. that revisits the topic with models estimated in R. 
+This vignette is focused on demonstrating code for setting up and estimating spatial regression models in R. The models are focused on the effect of air quality on home values, with the precise specifications drawn from [Harrison & Rubenfield 1978](./literature/harrison-and-rubenfield-1978-environmental-economics.pdf)'s original use of the Boston data. that revisits the topic with models estimated in R. 
 
 Check out this paper if interested the nuts and bolts of how the covariate specifications were selected, but this should not be material to understanding the setup for these models in R.
 
